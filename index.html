@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Studio Kolase Pro - Magic Eraser & Gosok Manual</title>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* mencegah seleksi teks saat menggosok */
+        }
+
+        body {
+            background: linear-gradient(135deg, #eef2f9 0%, #dfe6f0 100%);
+            font-family: 'Inter', sans-serif;
+            padding: 20px 16px 40px;
+            min-height: 100vh;
+            color: #1a2c3e;
+        }
+
+        .app-container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+            font-size: 2rem;
+            background: linear-gradient(135deg, #1f3b4c, #2c5f8a, #1f4b6e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            color: #4a627a;
+            font-weight: 500;
+            margin-top: 6px;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 14px;
+            margin-bottom: 32px;
+        }
+        .btn {
+            background: white;
+            border: none;
+            padding: 12px 26px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #1f2f3e;
+            backdrop-filter: blur(4px);
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .btn-primary {
+            background: #2c5f8a;
+            color: white;
+            box-shadow: 0 10px 22px -8px rgba(44,95,138,0.5);
+            border: none;
+        }
+        .btn-primary:hover {
+            background: #1e4768;
+            transform: translateY(-2px);
+        }
+        .btn-outline {
+            background: rgba(255,255,255,0.8);
+            border: 1px solid #cbdbe2;
+        }
+        .btn-outline:hover {
+            background: white;
+            border-color: #2c5f8a;
+            transform: translateY(-2px);
+        }
+        .btn-warning {
+            background: #fef7e0;
+            color: #b4682d;
+            border-color: #ffe1aa;
+        }
+        .btn-warning:hover {
+            background: #ffefc0;
+        }
+
+        .editor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            margin-bottom: 32px;
+        }
+        @media (max-width: 780px) {
+            .editor-grid { grid-template-columns: 1fr; gap: 26px; }
+        }
+        .canvas-card {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            padding: 1.2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.12);
+            border: 1px solid rgba(255,255,255,0.7);
+        }
+        .canvas-title {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            padding: 0 6px;
+            font-weight: 600;
+            flex-wrap: wrap;
+        }
+        .canvas-wrapper {
+            background: #f4f8fe;
+            border-radius: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 320px;
+            border: 2px dashed #cbdae6;
+            overflow: hidden;
+            position: relative;
+            touch-action: none; /* untuk sentuhan mulus */
+        }
+        canvas {
+            max-width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            display: block;
+            border-radius: 1rem;
+            background-image: radial-gradient(circle, #b8c7dd 1.2px, transparent 1px);
+            background-size: 22px 22px;
+            background-color: #eef2f7;
+            cursor: crosshair;
+        }
+        .slider-area {
+            margin-top: 16px;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 10px;
+            background: #cbdbe2;
+        }
+        .info-brush {
+            background: #eef3fa;
+            border-radius: 30px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .collage-section {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            padding: 1.6rem;
+            margin-top: 20px;
+            box-shadow: 0 15px 32px -12px rgba(0,0,0,0.1);
+        }
+        .collage-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .collage-preview {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+            background: #eef3fc;
+            padding: 20px;
+            border-radius: 1.8rem;
+        }
+        .mini-canvas {
+            background: white;
+            border-radius: 28px;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 10px 18px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: 0.2s;
+            border: 2px solid #e2ecf5;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 22px;
+        }
+        footer {
+            text-align: center;
+            margin-top: 35px;
+            font-size: 0.7rem;
+            opacity: 0.65;
+        }
+        .badge-success {
+            background: #d4edda;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+        }
+        .erase-mode-indicator {
+            background: #ffedd5;
+            color: #b45309;
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header">
+        <h1><i class="fas fa-wand-magic"></i> Kolase Studio · Magic Eraser + Gosok Manual</h1>
+        <p>Kamera Belakang | Hapus Latar Otomatis | ✨ Gosok dengan Jari untuk bersihkan background</p>
+    </div>
+
+    <div class="toolbar">
+        <button id="cameraBtn" class="btn btn-primary"><i class="fas fa-camera-retro"></i> Kamera Belakang</button>
+        <button id="fileBtn" class="btn btn-primary"><i class="fas fa-folder-open"></i> File Manager</button>
+        <button id="removeBgBtn" class="btn btn-outline"><i class="fas fa-magic"></i> ✨ Hapus Latar Otomatis</button>
+        <button id="resetImgBtn" class="btn btn-outline"><i class="fas fa-undo-alt"></i> Reset Gambar</button>
+        <button id="clearEraseBtn" class="btn btn-warning"><i class="fas fa-hand-peace"></i> Bersihkan Gosokan</button>
+    </div>
+
+    <div class="editor-grid">
+        <!-- Kiri: Sumber + mode gosok manual -->
+        <div class="canvas-card">
+            <div class="canvas-title">
+                <span><i class="fas fa-image"></i> Foto Aktif (GOSOK dengan JARI)</span>
+                <span id="activeStatus" class="badge-success"><i class="fas fa-hourglass-half"></i> Belum ada</span>
+            </div>
+            <div class="canvas-wrapper" id="sourceWrapper">
+                <canvas id="sourceCanvas" width="550" height="420" style="width:100%; height:auto; touch-action: none;"></canvas>
+            </div>
+            <div class="slider-area">
+                <i class="fas fa-fill-drip"></i>
+                <input type="range" id="toleranceSlider" min="0" max="100" value="28">
+                <span id="tolValue" style="font-size:12px;">Toleransi otomatis: 28</span>
+                <div class="info-brush"><i class="fas fa-fingerprint"></i> <span id="eraseModeLabel">✨ Mode Gosok: usap objek untuk hapus latar</span></div>
+            </div>
+            <p style="font-size:11px; margin-top:8px; color:#3e5a77;"><i class="fas fa-info-circle"></i> <strong>Gosok manual</strong>: gunakan jari/mouse di atas gambar (area objek) -> background akan bersih transparan secara pintar. Magic hapus latar juga tersedia.</p>
+        </div>
+        <!-- Kanan: Hasil transparan + simpan -->
+        <div class="canvas-card">
+            <div class="canvas-title">
+                <span><i class="fas fa-clone"></i> Hasil Transparan (Background Bersih)</span>
+                <span><i class="fas fa-border-all"></i> Hasil Gosok & Magic</span>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="resultCanvas" width="550" height="420" style="width:100%; height:auto; background: repeating-conic-gradient(#d9e2ec 0% 25%, #ffffff 0% 50%) 50% / 20px 20px;"></canvas>
+            </div>
+            <div class="btn-group" style="margin-top: 12px;">
+                <button id="saveResultBtn" class="btn" style="padding:8px 18px;"><i class="fas fa-download"></i> Simpan Hasil PNG (Transparan)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kolase Modern -->
+    <div class="collage-section">
+        <div class="collage-header">
+            <i class="fas fa-object-group" style="font-size:1.8rem; color:#2c5f8a;"></i>
+            <h3>Bingkai Kolase Modern · Dua Kolom Elegan</h3>
+        </div>
+        <div class="collage-preview" id="collagePreviewArea">
+            <div class="mini-canvas" id="collageSlot1">
+                <i class="fas fa-plus-circle" style="color:#91a3bb; font-size:32px;"></i>
+            </div>
+            <div class="mini-canvas" id="collageSlot2">
+                <i class="fas fa-plus-circle" style="color:#91a3bb; font-size:32px;"></i>
+            </div>
+        </div>
+        <div class="btn-group">
+            <button id="setToSlot1" class="btn btn-outline"><i class="fas fa-arrow-right"></i> Masukkan Hasil ke Kolom 1</button>
+            <button id="setToSlot2" class="btn btn-outline"><i class="fas fa-arrow-right"></i> Masukkan Hasil ke Kolom 2</button>
+            <button id="generateCollageBtn" class="btn btn-primary"><i class="fas fa-layer-group"></i> Buat Kolase</button>
+            <button id="downloadCollageBtn" class="btn btn-outline"><i class="fas fa-download"></i> Unduh Kolase</button>
+        </div>
+        <div style="margin-top: 25px; text-align:center;">
+            <canvas id="collageCanvas" width="700" height="400" style="width:100%; max-width:700px; border-radius: 32px; box-shadow: 0 12px 28px rgba(0,0,0,0.15); background:#f3f7fd;"></canvas>
+        </div>
+    </div>
+    <footer>⚡ <strong>Fitur GOSOK MANUAL:</strong> Gerakkan jari atau mouse di atas gambar pada area yang ingin dihapus backgroundnya. Sistem akan menghapus area sekitar secara cerdas (deteksi tepi). Kombinasikan dengan Magic Eraser untuk hasil sempurna. Kamera belakang resolusi tinggi.</footer>
+</div>
+
+<script>
+    (function(){
+        // Elemen Canvas
+        const sourceCanvas = document.getElementById('sourceCanvas');
+        const resultCanvas = document.getElementById('resultCanvas');
+        const ctxSrc = sourceCanvas.getContext('2d');
+        const ctxRes = resultCanvas.getContext('2d');
+        
+        const CANVAS_W = 550;
+        const CANVAS_H = 420;
+        sourceCanvas.width = CANVAS_W;
+        sourceCanvas.height = CANVAS_H;
+        resultCanvas.width = CANVAS_W;
+        resultCanvas.height = CANVAS_H;
+        
+        // State
+        let originalImageElement = null;     // gambar asli HTMLImageElement
+        let imageLoaded = false;
+        let currentDisplayImageData = null;   // data gambar yang tampil di source (dengan latar putih/objek)
+        let resultImageData = null;            // RGBA hasil transparan
+        
+        // Data gambar background awal untuk operasi gosok (tanpa hapus)
+        let baseImageData = null; // simpan gambar asli (dengan latar putih)
+        
+        // Inisialisasi default
+        ctxSrc.fillStyle = "#F0F4FA";
+        ctxSrc.fillRect(0, 0, CANVAS_W, CANVAS_H);
+        ctxRes.clearRect(0, 0, CANVAS_W, CANVAS_H);
+        ctxRes.fillStyle = "rgba(0,0,0,0)";
+        ctxRes.fillRect(0, 0, CANVAS_W, CANVAS_H);
+        
+        // Toleransi untuk magic & brush
+        let tolerance = 28;
+        const toleranceSlider = document.getElementById('toleranceSlider');
+        const tolValueSpan = document.getElementById('tolValue');
+        toleranceSlider.addEventListener('input', (e) => {
+            tolerance = parseInt(e.target.value);
+            tolValueSpan.innerText = `Toleransi otomatis: ${tolerance}`;
+        });
+        
+        // Fungsi memuat gambar ke source (latar putih solid)
+        function loadImageToSource(imgElement) {
+            originalImageElement = imgElement;
+            ctxSrc.clearRect(0, 0, CANVAS_W, CANVAS_H);
+            ctxSrc.fillStyle = "#FFFFFF";
+            ctxSrc.fillRect(0, 0, CANVAS_W, CANVAS_H);
+            const scale = Math.min(CANVAS_W / imgElement.width, CANVAS_H / imgElement.height);
+            const dx = (CANVAS_W - imgElement.width * scale) / 2;
+            const dy = (CANVAS_H - imgElement.height * scale) / 2;
+            ctxSrc.drawImage(imgElement, dx, dy, imgElement.width * scale, imgElement.height * scale);
+            // Simpan base imageData (RGBA dengan background putih)
+            baseImageData = ctxSrc.getImageData(0, 0, CANVAS_W, CANVAS_H);
+            currentDisplayImageData = new ImageData(new Uint8ClampedArray(baseImageData.data), CANVAS_W, CANVAS_H);
+            // set hasil awal sama dengan source (belum transparan)
+            ctxRes.clearRect(0, 0, CANVAS_W, CANVAS_H);
+            ctxRes.putImageData(baseImageData, 0, 0);
+            resultImageData = ctxRes.getImageData(0, 0, CANVAS_W, CANVAS_H);
+            imageLoaded = true;
+            document.getElementById('activeStatus').innerHTML = '<i class="fas fa-check-circle"></i> Foto aktif | Siap gosok';
+        }
+        
+        // ========== SISTEM GOSOK MANUAL (PINTAR) ==========
+        // Fungsi: menghapus background lokal berdasarkan seed titik (x,y) dengan flood-fill berbasis toleransi warna
+        // Tapi untuk performa dan interaksi realtime, kita lakukan smart erase pada area sekitar titik dengan deteksi warna latar belakang.
+        // Strategi: deteksi warna latar dominan dari pojok (sama seperti magic), lalu pada titik gosok, kita hapus area contiguous dengan toleransi dan juga sekitar radius.
+        // Supaya mulus, kita gunakan pendekatan: dari titik yang digosok, hapus semua piksel yang memiliki warna mirip dengan warna latar (pojok) dalam radius dinamis.
+        // Namun agar lebih canggih, kita akan melakukan "brush alpha" : pada koordinat lingkaran, kita set alpha = 0 jika warna mendekati background.
+        
+        // Ambil warna latar background (dari sudut)
+        function getBackgroundColorFromSource() {
+            if (!baseImageData) return {r:255,g:255,b:255};
+            const data = baseImageData.data;
+            const coords = [[5,5], [CANVAS_W-6,5], [5,CANVAS_H-6], [CANVAS_W-6,CANVAS_H-6], [CANVAS_W/2,5]];
+            let rSum=0,gSum=0,bSum=0;
+            let cnt=0;
+            coords.forEach(([x,y]) => {
+                if(x>=0 && x<CANVAS_W && y>=0 && y<CANVAS_H){
+                    let idx = (y*CANVAS_W + x)*4;
+                    rSum+=data[idx]; gSum+=data[idx+1]; bSum+=data[idx+2];
+                    cnt++;
+                }
+            });
+            if(cnt===0) return {r:255,g:255,b:255};
+            return {r: rSum/cnt, g: gSum/cnt, b: bSum/cnt};
+        }
+        
+        // Brush yang membersihkan background berdasarkan toleransi di sekitar titik (x,y)
+        function eraseAtBrushPoint(mx, my, brushRadius = 18) {
+            if (!imageLoaded || !baseImageData) return;
+            // Dapatkan warna latar global
+            const bg = getBackgroundColorFromSource();
+            const tolVal = tolerance;
+            const maxDiff = tolVal * 3.8;
+            // Ambil imageData hasil saat ini (resultImageData) lalu modifikasi
+            let currentResData = ctxRes.getImageData(0, 0, CANVAS_W, CANVAS_H);
+            let newData = new Uint8ClampedArray(currentResData.data);
+            let modified = false;
+            
+            for (let dy = -brushRadius; dy <= brushRadius; dy++) {
+                for (let dx = -brushRadius; dx <= brushRadius; dx++) {
+                    const dist = dx*dx + dy*dy;
+                    if (dist > brushRadius*brushRadius) continue;
+                    const x = Math.floor(mx + dx);
+                    const y = Math.floor(my + dy);
+                    if (x<0 || x>=CANVAS_W || y<0 || y>=CANVAS_H) continue;
+                    const idx = (y*CANVAS_W + x)*4;
+                    // Warna dari baseImageData (gambar asli dengan background solid)
+                    const r = baseImageData.data[idx];
+                    const g = baseImageData.data[idx+1];
+                    const b = baseImageData.data[idx+2];
+                    const diff = Math.abs(r - bg.r) + Math.abs(g - bg.g) + Math.abs(b - bg.b);
+                    if (diff <= maxDiff) {
+                        // hapus background: set alpha 0
+                        if (newData[idx+3] !== 0) {
+                            newData[idx+3] = 0;
+                            modified = true;
+                        }
+                    } else {
+                        // pastikan objek tetap terlihat dengan alpha 255
+                        if (newData[idx+3] === 0 && diff > maxDiff+5) {
+                            newData[idx+3] = 255;
+                            modified = true;
+                        }
+                        // warna objek dipertahankan
+                        newData[idx] = r;
+                        newData[idx+1] = g;
+                        newData[idx+2] = b;
+                    }
+                }
+            }
+            if (modified) {
+                const updatedImgData = new ImageData(newData, CANVAS_W, CANVAS_H);
+                ctxRes.putImageData(updatedImgData, 0, 0);
+                resultImageData = updatedImgData;
+                // update indikator
+                document.getElementById('activeStatus').innerHTML = '<i class="fas fa-hand-peace"></i> Gosokan aktif! Background bersih';
+                setTimeout(() => {
+                    if(imageLoaded) document.getElementById('activeStatus').innerHTML = '<i class="fas fa-check-circle"></i> Foto aktif | Siap gosok';
+                }, 1500);
+            }
+        }
+        
+        // Event handler untuk mouse & touch (gosok manual)
+        function setupBrushEvents() {
+            const canvasElem = sourceCanvas;
+            let isErasing = false;
+            
+            const getCanvasCoords = (e) => {
+                const rect = canvasElem.getBoundingClientRect();
+                const scaleX = canvasElem.width / rect.width;
+                const scaleY = canvasElem.height / rect.height;
+                let clientX, clientY;
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                let canvasX = (clientX - rect.left) * scaleX;
+                let canvasY = (clientY - rect.top) * scaleY;
+                canvasX = Math.min(Math.max(0, canvasX), CANVAS_W-1);
+                canvasY = Math.min(Math.max(0, canvasY), CANVAS_H-1);
+                return { x: canvasX, y: canvasY };
+            };
+            
+            const onErase = (e) => {
+                if (!imageLoaded) return;
+                e.preventDefault();
+                const { x, y } = getCanvasCoords(e);
+                eraseAtBrushPoint(x, y, 20); // radius brush 20px untuk gosok nyaman
+                // sedikit confetti efek saat menggosok (halus)
+                canvasConfetti({ particleCount: 5, spread: 12, origin: { y: 0.6 }, colors: ['#88aacc'], startVelocity: 5 });
+            };
+            
+            const startErase = (e) => {
+                if (!imageLoaded) return;
+                isErasing = true;
+                onErase(e);
+            };
+            const moveErase = (e) => {
+                if (!isErasing || !imageLoaded) return;
+                onErase(e);
+            };
+            const endErase = () => { isErasing = false; };
+            
+            canvasElem.addEventListener('mousedown', startErase);
+            window.addEventListener('mousemove', moveErase);
+            window.addEventListener('mouseup', endErase);
+            canvasElem.addEventListener('touchstart', startErase, {passive: false});
+            canvasElem.addEventListener('touchmove', moveErase, {passive: false});
+            canvasElem.addEventListener('touchend', endErase);
+        }
+        
+        // ========== MAGIC HAPUS LATAR OTOMATIS (seluruh background) ==========
+        function magicRemoveBackground() {
+            if (!imageLoaded || !baseImageData) {
+                alert("Tidak ada gambar. Silakan upload atau ambil foto.");
+                return;
+            }
+            const bg = getBackgroundColorFromSource();
+            const maxDiff = tolerance * 4.2;
+            const srcData = baseImageData.data;
+            const newImgData = new ImageData(CANVAS_W, CANVAS_H);
+            const newData = newImgData.data;
+            for (let i = 0; i < srcData.length; i += 4) {
+                const r = srcData[i];
+                const g = srcData[i+1];
+                const b = srcData[i+2];
+                const diff = Math.abs(r - bg.r) + Math.abs(g - bg.g) + Math.abs(b - bg.b);
+                newData[i] = r;
+                newData[i+1] = g;
+                newData[i+2] = b;
+                newData[i+3] = (diff <= maxDiff) ? 0 : 255;
+            }
+            ctxRes.putImageData(newImgData, 0, 0);
+            resultImageData = newImgData;
+            canvasConfetti({ particleCount: 120, spread: 55, origin: { y: 0.6 }, colors: ['#2c5f8a', '#6c9ebf'] });
+            document.getElementById('activeStatus').innerHTML = '<i class="fas fa-magic"></i> Magic hapus latar!';
+            setTimeout(() => {
+                if(imageLoaded) document.getElementById('activeStatus').innerHTML = '<i class="fas fa-check-circle"></i> Foto aktif';
+            }, 2000);
+        }
+        
+        // RESET gambar : mengembalikan ke baseImageData (tanpa transparansi)
+        function resetImage() {
+            if (originalImageElement) {
+                loadImageToSource(originalImageElement);
+                document.getElementById('activeStatus').innerHTML = '<i class="fas fa-undo-alt"></i> Gambar direset';
+                setTimeout(() => {
+                    if(imageLoaded) document.getElementById('activeStatus').innerHTML = '<i class="fas fa-check-circle"></i> Foto aktif | Siap gosok';
+                }, 1200);
+            } else {
+                ctxSrc.fillStyle = "#F0F4FA";
+                ctxSrc.fillRect(0, 0, CANVAS_W, CANVAS_H);
+                ctxRes.clearRect(0, 0, CANVAS_W, CANVAS_H);
+                imageLoaded = false;
+                originalImageElement = null;
+                baseImageData = null;
+                document.getElementById('activeStatus').innerHTML = '<i class="fas fa-hourglass-half"></i> Belum ada';
+            }
+        }
+        
+        function clearEraseOnly() {
+            if (!imageLoaded || !baseImageData) return;
+            // restore hasil dari baseImageData tanpa transparansi
+            ctxRes.putImageData(baseImageData, 0, 0);
+            resultImageData = ctxRes.getImageData(0,0,CANVAS_W,CANVAS_H);
+            document.getElementById('activeStatus').innerHTML = '<i class="fas fa-brush"></i> Gosokan dibersihkan';
+            setTimeout(() => {
+                if(imageLoaded) document.getElementById('activeStatus').innerHTML = '<i class="fas fa-check-circle"></i> Foto aktif';
+            }, 1000);
+        }
+        
+        // ========== EVENT ==========
+        document.getElementById('fileBtn').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/jpeg,image/png,image/webp';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if(!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => loadImageToSource(img);
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        });
+        
+        // Kamera belakang perfect
+        document.getElementById('cameraBtn').addEventListener('click', async () => {
+            try {
+                let constraints = { video: { facingMode: { exact: "environment" } } };
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia(constraints);
+                } catch(e) {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                }
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.autoplay = true;
+                video.playsInline = true;
+                video.style.position = 'fixed';
+                video.style.top = '-9999px';
+                document.body.appendChild(video);
+                await new Promise((resolve) => { video.onloadedmetadata = () => { video.play(); resolve(); }; });
+                setTimeout(() => {
+                    const canvasTemp = document.createElement('canvas');
+                    canvasTemp.width = video.videoWidth;
+                    canvasTemp.height = video.videoHeight;
+                    const ctxTemp = canvasTemp.getContext('2d');
+                    ctxTemp.drawImage(video, 0, 0);
+                    const img = new Image();
+                    img.onload = () => {
+                        loadImageToSource(img);
+                        stream.getTracks().forEach(track => track.stop());
+                        video.remove();
+                        canvasConfetti({ particleCount: 80, spread: 50, origin: { y: 0.6 } });
+                    };
+                    img.src = canvasTemp.toDataURL('image/png');
+                }, 500);
+            } catch(err) {
+                alert("Kamera gagal: " + err.message);
+            }
+        });
+        
+        document.getElementById('removeBgBtn').addEventListener('click', magicRemoveBackground);
+        document.getElementById('resetImgBtn').addEventListener('click', resetImage);
+        document.getElementById('clearEraseBtn').addEventListener('click', clearEraseOnly);
+        document.getElementById('saveResultBtn').addEventListener('click', () => {
+            if(!imageLoaded) { alert("Tidak ada gambar."); return; }
+            const link = document.createElement('a');
+            link.download = 'hasil_hapus_latar.png';
+            link.href = resultCanvas.toDataURL('image/png');
+            link.click();
+        });
+        
+        // Setup brush interaktif
+        setupBrushEvents();
+        
+        // ========== KOLASE ==========
+        let slot1DataURL = null, slot2DataURL = null;
+        const slot1Div = document.getElementById('collageSlot1');
+        const slot2Div = document.getElementById('collageSlot2');
+        
+        function updateMiniSlots() {
+            slot1Div.innerHTML = ''; slot2Div.innerHTML = '';
+            if (slot1DataURL) { let img = document.createElement('img'); img.src = slot1DataURL; img.style.width='100%'; img.style.height='100%'; img.style.objectFit='cover'; slot1Div.appendChild(img); }
+            else slot1Div.innerHTML = '<i class="fas fa-plus-circle" style="color:#91a3bb; font-size:32px;"></i>';
+            if (slot2DataURL) { let img2 = document.createElement('img'); img2.src = slot2DataURL; img2.style.width='100%'; img2.style.height='100%'; img2.style.objectFit='cover'; slot2Div.appendChild(img2); }
+            else slot2Div.innerHTML = '<i class="fas fa-plus-circle" style="color:#91a3bb; font-size:32px;"></i>';
+        }
+        
+        function getCurrentResultDataURL() {
+            if (!imageLoaded) return null;
+            return resultCanvas.toDataURL('image/png');
+        }
+        
+        document.getElementById('setToSlot1').addEventListener('click', () => {
+            if (!imageLoaded) { alert("Tidak ada foto aktif."); return; }
+            slot1DataURL = getCurrentResultDataURL();
+            updateMiniSlots();
+            canvasConfetti({ particleCount: 30, spread: 30 });
+        });
+        document.getElementById('setToSlot2').addEventListener('click', () => {
+            if (!imageLoaded) { alert("Tidak ada foto aktif."); return; }
+            slot2DataURL = getCurrentResultDataURL();
+            updateMiniSlots();
+            canvasConfetti({ particleCount: 30, spread: 30 });
+        });
+        
+        const collageCanvas = document.getElementById('collageCanvas');
+        const ctxCollage = collageCanvas.getContext('2d');
+        collageCanvas.width = 700; collageCanvas.height = 400;
+        
+        function renderModernCollage() {
+            if (!slot1DataURL && !slot2DataURL) { alert("Masukkan minimal satu foto ke kolom."); return; }
+            const loadImg = (url) => new Promise(resolve => { if(!url) resolve(null); else { let img = new Image(); img.onload = () => resolve(img); img.onerror = () => resolve(null); img.src = url; } });
+            Promise.all([loadImg(slot1DataURL), loadImg(slot2DataURL)]).then(([leftImg, rightImg]) => {
+                ctxCollage.clearRect(0,0,700,400);
+                const grad = ctxCollage.createLinearGradient(0,0,700,400);
+                grad.addColorStop(0,'#fdf8f0'); grad.addColorStop(1,'#f0e9e0');
+                ctxCollage.fillStyle = grad; ctxCollage.fillRect(0,0,700,400);
+                const margin=22, half=350;
+                const imgW = half - margin*1.2, imgH = 400 - margin*2;
+                function drawRounded(ctx, img, x, y, w, h) {
+                    if(!img) { ctx.fillStyle="#e2e8f0"; ctx.fillRect(x,y,w,h); ctx.fillStyle="#8196aa"; ctx.fillText("Kosong", x+w/2-25, y+h/2); return; }
+                    const scale = Math.min(w/img.width, h/img.height);
+                    const dw = img.width*scale, dh = img.height*scale;
+                    const dx = x + (w-dw)/2, dy = y + (h-dh)/2;
+                    ctx.save(); ctx.beginPath(); ctx.roundRect(dx, dy, dw, dh, 18); ctx.clip(); ctx.drawImage(img, dx, dy, dw, dh); ctx.restore();
+                }
+                if (leftImg) drawRounded(ctxCollage, leftImg, margin, margin, imgW, imgH);
+                else drawRounded(ctxCollage, null, margin, margin, imgW, imgH);
+                if (rightImg) drawRounded(ctxCollage, rightImg, half+12, margin, imgW, imgH);
+                else drawRounded(ctxCollage, null, half+12, margin, imgW, imgH);
+                ctxCollage.beginPath(); ctxCollage.moveTo(half,20); ctxCollage.lineTo(half,380); ctxCollage.strokeStyle="#c7a16b"; ctxCollage.lineWidth=2; ctxCollage.stroke();
+                canvasConfetti({ particleCount: 35, spread: 40, origin: { y: 0.7 } });
+            });
+        }
+        // Helper roundRect
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) { if (w < 2 * r) r = w / 2; if (h < 2 * r) r = h / 2; this.moveTo(x+r, y); this.lineTo(x+w-r, y); this.quadraticCurveTo(x+w, y, x+w, y+r); this.lineTo(x+w, y+h-r); this.quadraticCurveTo(x+w, y+h, x+w-r, y+h); this.lineTo(x+r, y+h); this.quadraticCurveTo(x, y+h, x, y+h-r); this.lineTo(x, y+r); this.quadraticCurveTo(x, y, x+r, y); return this; };
+        }
+        document.getElementById('generateCollageBtn').addEventListener('click', renderModernCollage);
+        document.getElementById('downloadCollageBtn').addEventListener('click', () => { let a=document.createElement('a'); a.download='kolase_modern.png'; a.href=collageCanvas.toDataURL(); a.click(); });
+        
+        updateMiniSlots();
+    })();
+</script>
+</body>
+</html>
