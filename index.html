@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Studio Kolase Modern & Penghapus Latar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #f4f7fc 0%, #e4ecf7 100%);
+            font-family: 'Inter', sans-serif;
+            padding: 16px 12px 40px;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+        .app-container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+            font-size: 1.8rem;
+            color: #1e3a8a;
+            letter-spacing: -0.5px;
+        }
+        .header p { color: #64748b; font-size: 0.9rem; margin-top: 4px; }
+        
+        /* Layout Grid Utama */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+        }
+        @media (max-width: 850px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #334155;
+        }
+
+        /* Area Kerja Pemrosesan Gambar */
+        .work-zone { display: flex; flex-direction: column; gap: 12px; }
+        .canvas-container {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 260px;
+            overflow: hidden;
+        }
+        canvas { max-width: 100%; height: auto; display: block; border-radius: 8px; }
+        #sourceCanvas { background-color: #f1f5f9; }
+        #previewCanvas {
+            background: repeating-conic-gradient(#cbd5e1 0% 25%, #ffffff 0% 50%) 50% / 16px 16px;
+        }
+
+        /* Tombol & Kontrol */
+        .btn-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn {
+            padding: 10px 14px; border: none; border-radius: 12px; font-weight: 600;
+            font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center;
+            justify-content: center; gap: 8px; transition: all 0.15s ease;
+        }
+        .btn-p { background: #2563eb; color: white; }
+        .btn-p:hover { background: #1d4ed8; }
+        .btn-s { background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }
+        .btn-s:hover { background: #e2e8f0; }
+        .btn-action { background: #059669; color: white; grid-column: span 2; font-size: 0.95rem; padding: 12px; }
+        
+        .control-group {
+            background: #f8fafc; padding: 12px; border-radius: 12px;
+            border: 1px solid #edf2f7; margin-top: 6px;
+        }
+        .control-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 0.8rem; font-weight: 600; color: #475569; }
+        .control-row:last-child { margin-bottom: 0; }
+        input[type="range"] { flex: 1; margin-left: 10px; height: 6px; accent-color: #2563eb; }
+
+        /* Bagian Kolase Kanan */
+        .collage-zone { display: flex; flex-direction: column; gap: 16px; }
+        .slots-row { display: flex; gap: 12px; justify-content: center; }
+        .slot-box {
+            width: 90px; height: 90px; background: #f1f5f9; border: 2px dashed #cbd5e1;
+            border-radius: 14px; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; font-size: 0.7rem; font-weight: 600; color: #64748b;
+            overflow: hidden; cursor: pointer; transition: 0.2s; position: relative;
+        }
+        .slot-box img { width: 100%; height: 100%; object-fit: cover; }
+        .slot-box.active { border-color: #2563eb; background: #eff6ff; }
+        
+        .collage-canvas-wrapper {
+            background: #ffffff; border-radius: 16px; padding: 8px;
+            border: 1px solid #e2e8f0; text-align: center;
+        }
+        #collageCanvas {
+            width: 100%; max-width: 600px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06); background: #f8fafc;
+        }
+
+        .position-controls {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 4px;
+        }
+        .btn-mini { padding: 6px; font-size: 0.75rem; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <h1><i class="fa-solid fa-images"></i> Studio Kolase Kreatif</h1>
+        <p>Proses Cepat murni lokal, Bebas Macet & Anti Gagal Akses Internet</p>
+    </div>
+
+    <div class="main-grid">
+        <div class="card work-zone">
+            <div class="card-title"><i class="fa-solid fa-sliders"></i> Pengolah Foto & Ekstraktor Objek</div>
+            
+            <div class="btn-stack">
+                <button id="fileBtn" class="btn btn-s"><i class="fa-solid fa-file-image"></i> Buka File</button>
+                <button id="cameraBtn" class="btn btn-s"><i class="fa-solid fa-camera"></i> Kamera Belakang</button>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="sourceCanvas"></canvas>
+            </div>
+
+            <div class="control-group">
+                <div class="control-row">
+                    <span><i class="fa-solid fa-wand-magic-sparkles"></i> Ambil Warna Pojok</span>
+                    <button id="autoPickBgBtn" class="btn btn-s" style="padding:4px 8px; font-size:11px;">Deteksi Otomatis</button>
+                </div>
+                <div class="control-row" style="margin-top: 8px;">
+                    <span id="tolLabel">Sensitivitas Potong: 25</span>
+                    <input type="range" id="toleranceSlider" min="5" max="150" value="25">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-row">
+                    <span><i class="fa-solid fa-wand-magic"></i> Filter Penyelaras Objek (Vivid)</span>
+                </div>
+                <div class="control-row">
+                    <span id="brightnessLabel">Kecerahan: 100%</span>
+                    <input type="range" id="brightnessSlider" min="70" max="150" value="100">
+                </div>
+                <div class="control-row">
+                    <span id="contrastLabel">Kontras: 100%</span>
+                    <input type="range" id="contrastSlider" min="70" max="150" value="100">
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="previewCanvas"></canvas>
+            </div>
+
+            <div class="btn-stack">
+                <button id="sendToLeftBtn" class="btn btn-p"><i class="fa-solid fa-arrow-left"></i> Pasang Kolom 1</button>
+                <button id="sendToRightBtn" class="btn btn-p">Pasang Kolom 2 <i class="fa-solid fa-arrow-right"></i></button>
+                <button id="resetBtn" class="btn btn-s" style="grid-column: span 2;"><i class="fa-solid fa-rotate-left"></i> Bersihkan Workspace</button>
+            </div>
+        </div>
+
+        <div class="card collage-zone">
+            <div class="card-title"><i class="fa-solid fa-layer-group"></i> Pratinjau Bingkai Kolase</div>
+            
+            <div class="slots-row">
+                <div class="slot-box" id="slotLeft">
+                    <i class="fa-regular fa-image" style="font-size:1.5rem; margin-bottom:4px;"></i>
+                    <span>Kolom 1</span>
+                </div>
+                <div class="slot-box" id="slotRight">
+                    <i class="fa-regular fa-image" style="font-size:1.5rem; margin-bottom:4px;"></i>
+                    <span>Kolom 2</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-row" style="margin-bottom: 4px;"><span><i class="fa-solid fa-arrows-to-eye"></i> Geser & Sesuaikan Foto Terpilih:</span></div>
+                <div class="position-controls">
+                    <button id="moveUp" class="btn btn-s btn-mini"><i class="fa-solid fa-arrow-up"></i> Atas</button>
+                    <button id="moveDown" class="btn btn-s btn-mini"><i class="fa-solid fa-arrow-down"></i> Bawah</button>
+                    <button id="zoomIn" class="btn btn-s btn-mini"><i class="fa-solid fa-magnifying-glass-plus"></i> Besar</button>
+                    <button id="zoomOut" class="btn btn-s btn-mini"><i class="fa-solid fa-magnifying-glass-minus"></i> Kecil</button>
+                </div>
+            </div>
+
+            <div class="collage-canvas-wrapper">
+                <canvas id="collageCanvas"></canvas>
+            </div>
+
+            <button id="downloadCollageBtn" class="btn btn-p btn-action"><i class="fa-solid fa-cloud-arrow-down"></i> Simpan Hasil Kolase Akhir</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // Konfigurasi Dimensi Canvas Dasar
+        const SRC_W = 500; const SRC_H = 400;
+        const COL_W = 750; const COL_H = 450;
+
+        const sourceCanvas = document.getElementById('sourceCanvas');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const collageCanvas = document.getElementById('collageCanvas');
+
+        const ctxSrc = sourceCanvas.getContext('2d');
+        const ctxPre = previewCanvas.getContext('2d');
+        const ctxCol = collageCanvas.getContext('2d');
+
+        sourceCanvas.width = SRC_W; sourceCanvas.height = SRC_H;
+        previewCanvas.width = SRC_W; previewCanvas.height = SRC_H;
+        collageCanvas.width = COL_W; collageCanvas.height = COL_H;
+
+        // Variabel Penyimpan Data Internal
+        let rawImage = null;
+        let pickedBgColor = { r: 255, g: 255, b: 255 };
+        
+        // Objek Slot Kolase Menggunakan Transformasi Koordinat Lokal
+        let slots = {
+            left: { imgDataURL: null, xOffset: 0, yOffset: 0, scale: 1.0 },
+            right: { imgDataURL: null, xOffset: 0, yOffset: 0, scale: 1.0 }
+        };
+        let activeSlot = 'left';
+
+        // Tampilan Awal Setup Ruang Kerja Blank Canvas
+        function clearCanvas(ctx, w, h, text) {
+            ctx.fillStyle = "#f1f5f9"; ctx.fillRect(0,0,w,h);
+            ctx.fillStyle = "#94a3b8"; ctx.font = "600 13px 'Inter'";
+            ctx.textAlign = "center"; ctx.fillText(text, w/2, h/2);
+        }
+        clearCanvas(ctxSrc, SRC_W, SRC_H, "Klik File / Kamera Belakang untuk input");
+        clearCanvas(ctxPre, SRC_W, SRC_H, "Hasil transparan tampil di sini");
+        renderCollage();
+
+        // Manajemen Pemicu Event Pengatur Nilai Slider Filter
+        const toleranceSlider = document.getElementById('toleranceSlider');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const contrastSlider = document.getElementById('contrastSlider');
+
+        [toleranceSlider, brightnessSlider, contrastSlider].forEach(slider => {
+            slider.addEventListener('input', () => {
+                document.getElementById('tolLabel').innerText = `Sensitivitas Potong: ${toleranceSlider.value}`;
+                document.getElementById('brightnessLabel').innerText = `Kecerahan: ${brightnessSlider.value}%`;
+                document.getElementById('contrastLabel').innerText = `Kontras: ${contrastSlider.value}%`;
+                processImageProcessing();
+            });
+        });
+
+        // Handler Upload Gambar & Akses Kamera Belakang HP
+        document.getElementById('fileBtn').addEventListener('click', () => {
+            const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*';
+            input.onchange = (e) => { loadFileToWorkspace(e.target.files[0]); };
+            input.click();
+        });
+
+        document.getElementById('cameraBtn').addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+                    .catch(() => navigator.mediaDevices.getUserMedia({ video: true }));
+                const video = document.createElement('video'); video.srcObject = stream; video.autoplay = true; video.playsInline = true;
+                video.onloadedmetadata = () => {
+                    setTimeout(() => {
+                        const capCanvas = document.createElement('canvas');
+                        capCanvas.width = video.videoWidth; capCanvas.height = video.videoHeight;
+                        capCanvas.getContext('2d').drawImage(video, 0, 0);
+                        fetch(capCanvas.toDataURL()).then(res => res.blob()).then(blob => loadFileToWorkspace(blob));
+                        stream.getTracks().forEach(t => t.stop());
+                    }, 600);
+                };
+            } catch (err) { alert("Kamera bermasalah atau izin tidak aktif."); }
+        });
+
+        function loadFileToWorkspace(file) {
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                rawImage = new Image();
+                rawImage.onload = () => {
+                    ctxSrc.fillStyle = "#ffffff"; ctxSrc.fillRect(0,0,SRC_W,SRC_H);
+                    const ratio = Math.min(SRC_W / rawImage.width, SRC_H / rawImage.height);
+                    const nx = (SRC_W - rawImage.width * ratio)/2; const ny = (SRC_H - rawImage.height * ratio)/2;
+                    ctxSrc.drawImage(rawImage, nx, ny, rawImage.width * ratio, rawImage.height * ratio);
+                    
+                    autoDetectCornerColor();
+                    processImageProcessing();
+                };
+                rawImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Algoritma Pintar Pendeteksi Warna Dominan di Sudut Tepi Gambar
+        function autoDetectCornerColor() {
+            const imgData = ctxSrc.getImageData(0,0,SRC_W,SRC_H).data;
+            const samples = [0, (SRC_W - 5)*4, (SRC_H - 5)*SRC_W*4];
+            let r=0, g=0, b=0;
+            samples.forEach(idx => { r += imgData[idx]; g += imgData[idx+1]; b += imgData[idx+2]; });
+            pickedBgColor = { r: Math.round(r/3), g: Math.round(g/3), b: Math.round(b/3) };
+        }
+        document.getElementById('autoPickBgBtn').addEventListener('click', () => { if(rawImage) { autoDetectCornerColor(); processImageProcessing(); } });
+
+        // Inti Sistem Pemrosesan Pixel Murni Lokal (Chroma Key & Vivid Adjustment)
+        function processImageProcessing() {
+            if(!rawImage) return;
+            const srcData = ctxSrc.getImageData(0,0,SRC_W,SRC_H);
+            const data = srcData.data;
+            
+            const targetData = ctxPre.createImageData(SRC_W, SRC_H);
+            const out = targetData.data;
+            
+            const tol = parseInt(toleranceSlider.value);
+            const bVal = parseInt(brightnessSlider.value) / 100;
+            const cVal = parseInt(contrastSlider.value) / 100;
+            
+            for(let i=0; i<data.length; i+=4) {
+                let r = data[i]; let g = data[i+1]; let b = data[i+2];
+                
+                // Rumus Euclidean Distance deteksi kedekatan warna latar
+                const dist = Math.sqrt(Math.pow(r-pickedBgColor.r,2) + Math.pow(g-pickedBgColor.g,2) + Math.pow(b-pickedBgColor.b,2));
+                
+                if(dist < tol) {
+                    out[i+3] = 0; // Transparan penuh
+                } else {
+                    // Terapkan Filter Vivid (Brightness & Contrast) pada objek yang tersisa
+                    r = (r - 128) * cVal + 128 + (bVal - 1) * 255;
+                    g = (g - 128) * cVal + 128 + (bVal - 1) * 255;
+                    b = (b - 128) * cVal + 128 + (bVal - 1) * 255;
+                    
+                    out[i] = Math.max(0, Math.min(255, r));
+                    out[i+1] = Math.max(0, Math.min(255, g));
+                    out[i+2] = Math.max(0, Math.min(255, b));
+                    out[i+3] = 255; // Solid objek
+                }
+            }
+            ctxPre.putImageData(targetData, 0, 0);
+        }
+
+        // Pengiriman Aset Transparan ke Slot Kolase Kiri / Kanan
+        document.getElementById('sendToLeftBtn').addEventListener('click', () => { pushToCollageSlot('left'); });
+        document.getElementById('sendToRightBtn').addEventListener('click', () => { pushToCollageSlot('right'); });
+
+        function pushToCollageSlot(side) {
+            if(!rawImage) { alert("Silakan buka gambar & hapus latar terlebih dahulu."); return; }
+            slots[side].imgDataURL = previewCanvas.toDataURL();
+            slots[side].xOffset = 0; slots[side].yOffset = 0; slots[side].scale = 1.0; // Reset koordinat geser
+            
+            document.getElementById(side === 'left' ? 'slotLeft' : 'slotRight').innerHTML = `<img src="${slots[side].imgDataURL}">`;
+            selectSlot(side);
+            renderCollage();
+            canvasConfetti({ particleCount: 40, spread: 40 });
+        }
+
+        // Manajemen Seleksi Aktif Slot Kolase
+        const sL = document.getElementById('slotLeft'); const sR = document.getElementById('slotRight');
+        sL.addEventListener('click', () => selectSlot('left'));
+        sR.addEventListener('click', () => selectSlot('right'));
+
+        function selectSlot(side) {
+            activeSlot = side;
+            sL.classList.remove('active'); sR.classList.remove('active');
+            document.getElementById(side === 'left' ? 'slotLeft' : 'slotRight').classList.add('active');
+        }
+        selectSlot('left');
+
+        // Pengendali Gerak & Skala Gambar dalam Grid Kolase
+        document.getElementById('moveUp').addEventListener('click', () => { slots[activeSlot].yOffset -= 15; renderCollage(); });
+        document.getElementById('moveDown').addEventListener('click', () => { slots[activeSlot].yOffset += 15; renderCollage(); });
+        document.getElementById('zoomIn').addEventListener('click', () => { slots[activeSlot].scale += 0.1; renderCollage(); });
+        document.getElementById('zoomOut').addEventListener('click', () => { slots[activeSlot].scale = Math.max(0.2, slots[activeSlot].scale - 0.1); renderCollage(); });
+
+        // Proses Utama Rendering Gambar Gabungan Kolase 2 Kolom Modern
+        function renderCollage() {
+            ctxCol.clearRect(0, 0, COL_W, COL_H);
+            
+            // Background Gradasi Premium Minimalis
+            const grad = ctxCol.createLinearGradient(0,0,COL_W,COL_H);
+            grad.addColorStop(0, '#f8fafc'); grad.addColorStop(1, '#e2e8f0');
+            ctxCol.fillStyle = grad; ctxCol.fillRect(0,0,COL_W,COL_H);
+
+            const m = 18; // Margin tepi bingkai
+            const cardW = (COL_W - (m * 3)) / 2;
+            const cardH = COL_H - (m * 2);
+
+            // Kolom Kiri
+            drawSlotGraphic(slots.left, m, m, cardW, cardH, "Kolom 1 Kosong");
+            // Kolom Kanan
+            drawSlotGraphic(slots.right, m + cardW + m, m, cardW, cardH, "Kolom 2 Kosong");
+
+            // Garis Pembatas Estetik Tengah Bergaya Studio Modern
+            ctxCol.beginPath(); ctxCol.moveTo(COL_W/2, m); ctxCol.lineTo(COL_W/2, COL_H - m);
+            ctxCol.strokeStyle = "#ffffff"; ctxCol.lineWidth = 4; ctxCol.stroke();
+            ctxCol.beginPath(); ctxCol.moveTo(COL_W/2, m + 10); ctxCol.lineTo(COL_W/2, COL_H - m - 10);
+            ctxCol.strokeStyle = "#cbd5e1"; ctxCol.lineWidth = 1.5; ctxCol.stroke();
+        }
+
+        function drawSlotGraphic(slotObj, x, y, w, h, placeholderText) {
+            // Gambar kotak dudukan foto ber-radius sudut (rounded rectangle)
+            ctxCol.save();
+            ctxCol.beginPath(); ctxCol.roundRect(x, y, w, h, 16); ctxCol.closePath();
+            ctxCol.clip();
+
+            if(slotObj.imgDataURL) {
+                const img = new Image();
+                img.src = slotObj.imgDataURL;
+                // Menggunakan sistem penundaan jika element belum ter-cache sempurna
+                if(img.complete) {
+                    ctxCol.fillStyle = "#ffffff"; ctxCol.fillRect(x,y,w,h);
+                    
+                    const sw = w * slotObj.scale; const sh = h * slotObj.scale;
+                    const dx = x + (w - sw)/2 + slotObj.xOffset;
+                    const dy = y + (h - sh)/2 + slotObj.yOffset;
+                    
+                    ctxCol.drawImage(img, dx, dy, sw, sh);
+                } else {
+                    img.onload = () => renderCollage();
+                }
+            } else {
+                ctxCol.fillStyle = "#edf2f7"; ctxCol.fillRect(x,y,w,h);
+                ctxCol.fillStyle = "#94a3b8"; ctxCol.font = "500 12px 'Inter'";
+                ctxCol.textAlign = "center"; ctxCol.fillText(placeholderText, x + w/2, y + h/2);
+            }
+            ctxCol.restore();
+        }
+
+        // Tombol Reset untuk membersihkan total seluruh data komponen halaman
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            rawImage = null;
+            slots.left = { imgDataURL: null, xOffset: 0, yOffset: 0, scale: 1.0 };
+            slots.right = { imgDataURL: null, xOffset: 0, yOffset: 0, scale: 1.0 };
+            document.getElementById('slotLeft').innerHTML = '<i class="fa-regular fa-image" style="font-size:1.5rem; margin-bottom:4px;"></i><span>Kolom 1</span>';
+            document.getElementById('slotRight').innerHTML = '<i class="fa-regular fa-image" style="font-size:1.5rem; margin-bottom:4px;"></i><span>Kolom 2</span>';
+            clearCanvas(ctxSrc, SRC_W, SRC_H, "Klik File / Kamera Belakang untuk input");
+            clearCanvas(ctxPre, SRC_W, SRC_H, "Hasil transparan tampil di sini");
+            renderCollage();
+        });
+
+        // Trigger Download Gambar Kolase Gabungan PNG Akhir ke Galeri HP
+        document.getElementById('downloadCollageBtn').addEventListener('click', () => {
+            if(!slots.left.imgDataURL && !slots.right.imgDataURL) {
+                alert("Kolase masih kosong!"); return;
+            }
+            const a = document.createElement('a');
+            a.download = 'Studio_Kolase_Modern.png';
+            a.href = collageCanvas.toDataURL('image/png');
+            a.click();
+        });
+    })();
+</script>
+</body>
+</html>
