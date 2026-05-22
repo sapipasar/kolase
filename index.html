@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Studio Kolase & Penghapus Latar AI Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.2/dist/bundle.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #eef2f9 0%, #dfe6f0 100%);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            color: #1a2c3e;
+            padding-bottom: 30px;
+        }
+        
+        /* Navigasi Antar Halaman */
+        .nav-tabs {
+            display: flex;
+            background: #1f3b4c;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            color: #a5b4fc;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 4px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .tab-btn.active {
+            color: white;
+            background: #2c5f8a;
+            border-bottom: 4px solid #38bdf8;
+        }
+
+        .screen { display: none; padding: 16px; max-width: 1200px; margin: 0 auto; }
+        .screen.active { display: block; }
+
+        .header-title {
+            text-align: center;
+            margin: 15px 0 20px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: #1f3b4c;
+        }
+
+        /* Desain Umum Komponen */
+        .card { background: white; border-radius: 1.2rem; padding: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.04); border: 1px solid #e6edf2; margin-bottom: 20px; }
+        .btn {
+            background: white; border: 1px solid #cbdbe2; padding: 10px 18px; border-radius: 50px;
+            font-weight: 600; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px;
+            cursor: pointer; transition: all 0.2s ease; color: #1f2f3e; box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+        .btn-primary { background: #2c5f8a; color: white; border: none; }
+        .btn-success { background: #16a34a; color: white; border: none; }
+        .btn-danger { background: #dc2626; color: white; border: none; }
+        .btn-warning { background: #ea580c; color: white; border: none; }
+        .btn:disabled { background: #cbdbe2; color: #94a3b8; cursor: not-allowed; }
+        .btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.08); }
+
+        /* Workspace Grid & Canvas */
+        .workspace-layout { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+        @media (max-width: 850px) { .workspace-layout { grid-template-columns: 1fr; } }
+
+        .editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 15px; }
+        @media (max-width: 650px) { .editor-grid { grid-template-columns: 1fr; } }
+
+        .canvas-container { background: #f8fafc; border-radius: 1rem; border: 2px dashed #cbdbe2; display: flex; justify-content: center; align-items: center; padding: 10px; min-height: 320px; overflow: hidden; position: relative; }
+        canvas { max-width: 100%; height: auto; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-radius: 6px; }
+
+        .grid-library { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; }
+        .grid-opt { background: #f8fafc; border: 2px solid #e2ecf5; padding: 8px; border-radius: 10px; cursor: pointer; text-align: center; font-size: 11px; font-weight: 600; color: #475569; }
+        .grid-opt.active { border-color: #2c5f8a; background: #f0f6fc; color: #2c5f8a; }
+
+        /* Kontrol Panel */
+        .control-panel { background: #f8fafc; padding: 14px; border-radius: 1rem; border: 1px solid #e2ecf5; }
+        .control-panel h4 { font-size: 0.85rem; color: #1f3b4c; margin: 12px 0 6px; border-bottom: 1px solid #e2ecf5; padding-bottom: 2px; }
+        .control-panel h4:first-of-type { margin-top: 0; }
+
+        .slot-row { display: flex; gap: 5px; margin-bottom: 10px; }
+        .slot-item { flex: 1; padding: 8px; background: white; border: 2px solid #cbdbe2; border-radius: 8px; text-align: center; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: #475569; }
+        .slot-item.active { background: #2c5f8a; color: white; border-color: #2c5f8a; }
+
+        .dpad { display: grid; grid-template-columns: repeat(3, 36px); grid-template-rows: repeat(3, 36px); gap: 4px; justify-content: center; margin: 10px 0; }
+        .dpad-btn { background: white; border: 1px solid #cbdbe2; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: #2c5f8a; }
+        .dpad-btn:active { background: #cbdbe2; }
+
+        .slider-group { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; color: #475569; }
+
+        /* Khusus Screen 2 */
+        .checkerboard { background: repeating-conic-gradient(#cbdbe2 0% 25%, #ffffff 0% 50%) 50% / 20px 20px !important; }
+        .instruction-box { background: #eff6ff; border-left: 4px solid #2563eb; padding: 10px; font-size: 0.8rem; color: #1e40af; border-radius: 4px; margin-bottom: 12px; }
+        
+        /* Loading Overlay Animasi */
+        .loading-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); flex-direction: column; justify-content: center; align-items: center; font-weight: 700; color: #1f3b4c; z-index: 10; font-size: 13px; text-align: center; padding: 20px; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #2c5f8a; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="nav-tabs">
+        <div class="tab-btn active" id="tab1" onclick="switchScreen(1)"><i class="fas fa-th-large"></i> Halaman 1: Kolase</div>
+        <div class="tab-btn" id="tab2" onclick="switchScreen(2)"><i class="fas fa-magic"></i> Halaman 2: Hapus Latar AI</div>
+    </div>
+
+    <div id="screen1" class="screen active">
+        <div class="header-title">Studio Desain Kolase Grid Fleksibel</div>
+        
+        <div class="card" style="padding: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary" id="btnUploadCollage"><i class="fas fa-file-import"></i> Tambah dari File Manager</button>
+                <button class="btn" id="btnToggleCamera"><i class="fas fa-camera"></i> Ambil Kamera</button>
+            </div>
+            <div id="activeSlotIndicator" style="font-weight: 700; font-size: 13px; color: #16a34a;">Mengedit: Kotak 1</div>
+        </div>
+
+        <div id="camArea" style="display:none; text-align: center; margin-bottom: 15px;">
+            <video id="videoElement" autoplay playsinline style="width: 100%; max-width: 320px; border-radius: 8px; background: #000;"></video><br>
+            <button class="btn btn-success" style="margin-top: 5px;" id="btnCapturePhoto"><i class="fas fa-dot-circle"></i> Jepret Foto</button>
+        </div>
+
+        <div class="grid-library">
+            <div class="grid-opt active" data-model="v-2">2 Kiri-Kanan</div>
+            <div class="grid-opt" data-model="h-2">2 Atas-Bawah</div>
+            <div class="grid-opt" data-model="v-3">3 Vertikal</div>
+            <div class="grid-opt" data-model="mix-3">3 Kombinasi</div>
+        </div>
+
+        <div class="workspace-layout">
+            <div class="canvas-container">
+                <canvas id="collageCanvas" width="650" height="420" style="width: 100%;"></canvas>
+            </div>
+
+            <div class="control-panel">
+                <h4>1. Besarkan / Kecilkan Antarkotak</h4>
+                <div class="slider-group">
+                    <label><span>Garis Sekat Tengah</span><span id="splitValue">50%</span></label>
+                    <input type="range" id="splitSlider" min="20" max="80" value="50" style="width:100%;">
+                </div>
+
+                <h4>2. Jarak Pembatas Semat</h4>
+                <div class="slider-group">
+                    <label><span>Ketebalan Sekat</span><span id="gapValue">10px</span></label>
+                    <input type="range" id="gapSlider" min="0" max="40" value="10" style="width:100%;">
+                </div>
+
+                <h4>3. Pilih Kotak Target</h4>
+                <div class="slot-row" id="slotSelectorRow"></div>
+                
+                <div style="display:flex; gap:6px; margin-bottom:10px;">
+                    <button class="btn btn-danger" style="padding:6px; font-size:11px; flex:1; justify-content:center; border-radius:6px;" id="btnClearSlot"><i class="fas fa-trash-alt"></i> Hapus Foto</button>
+                    <button class="btn btn-warning" style="padding:6px; font-size:11px; flex:1; justify-content:center; border-radius:6px;" id="btnResetLayout"><i class="fas fa-undo"></i> Kembali Awal</button>
+                </div>
+
+                <h4>4. Filter Edit Foto</h4>
+                <div class="slider-group">
+                    <label><span>Kecerahan (Brightness)</span><span id="lblBright">100%</span></label>
+                    <input type="range" id="cBright" min="50" max="150" value="100">
+                </div>
+                <div class="slider-group">
+                    <label><span>Kontras (Contrast)</span><span id="lblContrast">100%</span></label>
+                    <input type="range" id="cContrast" min="50" max="150" value="100">
+                </div>
+
+                <h4>5. Skala Zoom & Geser</h4>
+                <div class="slider-group">
+                    <input type="range" id="zoomSlider" min="10" max="250" value="100">
+                    <span id="zoomValue" style="font-size:11px; font-weight:700; text-align:center; display:block;">100%</span>
+                </div>
+
+                <div class="dpad">
+                    <div></div><button class="dpad-btn" data-dir="up"><i class="fas fa-arrow-up"></i></button><div></div>
+                    <button class="dpad-btn" data-dir="left"><i class="fas fa-arrow-left"></i></button>
+                    <button class="dpad-btn" id="btnResetPos"><i class="fas fa-compress-arrows-alt"></i></button>
+                    <button class="dpad-btn" data-dir="right"><i class="fas fa-arrow-right"></i></button>
+                    <div></div><button class="dpad-btn" data-dir="down"><i class="fas fa-arrow-down"></i></button><div></div>
+                </div>
+
+                <button class="btn btn-success" style="width:100%; justify-content:center; margin-top:10px;" id="btnDownloadCollage"><i class="fas fa-save"></i> Simpan Hasil Kolase</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen2" class="screen">
+        <div class="header-title">Mesin Penghapus Latar Belakang AI Otomatis</div>
+        
+        <div class="instruction-box">
+            <i class="fas fa-magic"></i> <strong>Sistem Deteksi AI Pintar Terhubung:</strong> 
+            Anda cukup mengunggah foto produk/objek melalui tombol di bawah. Sistem Kecerdasan Buatan (AI) akan memproses gambar secara online dan langsung memotong latar belakang secara otomatis dengan sangat rapi (bebas noda warna)!
+        </div>
+
+        <div class="card" style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:15px; align-items:center;">
+            <button class="btn btn-primary" id="btnUploadBg"><i class="fas fa-cloud-upload-alt"></i> Unggah Foto ke Smart AI</button>
+            <button class="btn btn-success" id="btnSendToCollage" style="margin-left: auto;" disabled><i class="fas fa-share-square"></i> Kirim ke Kolase</button>
+        </div>
+
+        <div class="editor-grid">
+            <div class="card" style="position: relative;">
+                <span style="font-weight:700; font-size:12px; display:block; margin-bottom:8px; color:#475569;">Foto Asli Sumber</span>
+                <div class="canvas-container">
+                    <canvas id="bgSourceCanvas" width="450" height="340"></canvas>
+                </div>
+            </div>
+            <div class="card" style="position: relative;">
+                <span style="font-weight:700; font-size:12px; display:block; margin-bottom:8px; color:#2c5f8a;">Hasil Pemotongan AI Otomatis</span>
+                <div class="canvas-container checkerboard">
+                    <div class="loading-overlay" id="aiLoading">
+                        <div class="spinner"></div>
+                        <span id="aiStatusText">Menghubungkan ke Modul AI...</span>
+                    </div>
+                    <canvas id="bgResultCanvas" width="450" height="340"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="collageFileInput" accept="image/*" style="display:none;">
+    <input type="file" id="bgFileInput" accept="image/*" style="display:none;">
+
+<script>
+    (function(){
+        // Inisialisasi DOM Canvas & Konteks
+        const collageCanvas = document.getElementById('collageCanvas');
+        const ctxCol = collageCanvas.getContext('2d');
+        const bgSourceCanvas = document.getElementById('bgSourceCanvas');
+        const ctxBgSrc = bgSourceCanvas.getContext('2d');
+        const bgResultCanvas = document.getElementById('bgResultCanvas');
+        const ctxBgRes = bgResultCanvas.getContext('2d');
+
+        const videoElement = document.getElementById('videoElement');
+        const aiLoading = document.getElementById('aiLoading');
+        const aiStatusText = document.getElementById('aiStatusText');
+        const btnSendToCollage = document.getElementById('btnSendToCollage');
+
+        // State Global Aplikasi
+        let currentModel = 'v-2';
+        let currentActiveSlot = 0;
+        let globalBorderGap = 10;
+        let globalSplitRatio = 0.5;
+        let streamTrack = null;
+
+        // Buffer Slot Gambar Kolase
+        let collageSlots = [
+            { img: null, original: null, zoom: 1, x: 0, y: 0, bright: 100, contrast: 100 },
+            { img: null, original: null, zoom: 1, x: 0, y: 0, bright: 100, contrast: 100 },
+            { img: null, original: null, zoom: 1, x: 0, y: 0, bright: 100, contrast: 100 }
+        ];
+
+        let processedAiImage = null;
+
+        // Tampilan Reset Layar Awal Canvas
+        ctxCol.fillStyle = "#f1f5f9"; ctxCol.fillRect(0,0,650,420);
+        ctxBgSrc.fillStyle = "#f1f5f9"; ctxBgSrc.fillRect(0,0,450,340);
+        ctxBgRes.fillStyle = "#f1f5f9"; ctxBgRes.fillRect(0,0,450,340);
+
+        // --- SISTEM TABS NAVIGASI NAV ---
+        window.switchScreen = function(screenNum) {
+            document.getElementById('tab1').classList.toggle('active', screenNum === 1);
+            document.getElementById('tab2').classList.toggle('active', screenNum === 2);
+            document.getElementById('screen1').classList.toggle('active', screenNum === 1);
+            document.getElementById('screen2').classList.toggle('active', screenNum === 2);
+            stopCameraStream();
+        }
+
+        // --- SCREEN 1: OPERASI TOMBOL-TOMBOL KOLASE ---
+        document.getElementById('btnUploadCollage').addEventListener('click', () => {
+            document.getElementById('collageFileInput').click();
+        });
+
+        document.getElementById('collageFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    collageSlots[currentActiveSlot].img = img;
+                    collageSlots[currentActiveSlot].original = img;
+                    renderCollageGrid();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Kontrol Kamera HP
+        document.getElementById('btnToggleCamera').addEventListener('click', async () => {
+            const camArea = document.getElementById('camArea');
+            if (camArea.style.display === 'none') {
+                camArea.style.display = 'block';
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    videoElement.srcObject = stream;
+                    streamTrack = stream;
+                } catch(e) { alert("Akses kamera ditolak."); camArea.style.display = 'none'; }
+            } else { stopCameraStream(); }
+        });
+
+        function stopCameraStream() {
+            if(streamTrack) {
+                streamTrack.getTracks().forEach(track => track.stop());
+                streamTrack = null;
+            }
+            document.getElementById('camArea').style.display = 'none';
+        }
+
+        document.getElementById('btnCapturePhoto').addEventListener('click', () => {
+            const capCanvas = document.createElement('canvas');
+            capCanvas.width = videoElement.videoWidth || 640;
+            capCanvas.height = videoElement.videoHeight || 480;
+            capCanvas.getContext('2d').drawImage(videoElement, 0, 0);
+            
+            const img = new Image();
+            img.onload = () => {
+                collageSlots[currentActiveSlot].img = img;
+                collageSlots[currentActiveSlot].original = img;
+                renderCollageGrid();
+                stopCameraStream();
+            };
+            img.src = capCanvas.toDataURL('image/png');
+        });
+
+        // Pilihan Model Grid Layout
+        document.querySelectorAll('.grid-opt').forEach(opt => {
+            opt.addEventListener('click', function() {
+                document.querySelectorAll('.grid-opt').forEach(o => o.classList.remove('active'));
+                this.classList.add('active');
+                currentModel = this.getAttribute('data-model');
+                document.getElementById('splitSlider').disabled = !(currentModel==='v-2' || currentModel==='h-2');
+                rebuildSlotTabs();
+                renderCollageGrid();
+            });
+        });
+
+        function rebuildSlotTabs() {
+            const container = document.getElementById('slotSelectorRow');
+            container.innerHTML = "";
+            let maxSlots = (currentModel === 'v-2' || currentModel === 'h-2') ? 2 : 3;
+            if(currentActiveSlot >= maxSlots) currentActiveSlot = 0;
+
+            for (let i = 0; i < maxSlots; i++) {
+                const button = document.createElement('div');
+                button.className = `slot-item ${i === currentActiveSlot ? 'active' : ''}`;
+                button.innerText = `Kotak ${i + 1}`;
+                button.onclick = () => {
+                    currentActiveSlot = i;
+                    document.getElementById('activeSlotIndicator').innerText = `Mengedit: Kotak ${i+1}`;
+                    rebuildSlotTabs();
+                    syncSlidersFromSlotData();
+                    renderCollageGrid();
+                };
+                container.appendChild(button);
+            }
+        }
+
+        function syncSlidersFromSlotData() {
+            const slot = collageSlots[currentActiveSlot];
+            document.getElementById('zoomSlider').value = slot.zoom * 100;
+            document.getElementById('zoomValue').innerText = `${Math.round(slot.zoom * 100)}%`;
+            document.getElementById('cBright').value = slot.bright;
+            document.getElementById('lblBright').innerText = `${slot.bright}%`;
+            document.getElementById('cContrast').value = slot.contrast;
+            document.getElementById('lblContrast').innerText = `${slot.contrast}%`;
+        }
+
+        // Penggeser Slider Kolase
+        document.getElementById('splitSlider').addEventListener('input', function() {
+            globalSplitRatio = this.value / 100;
+            document.getElementById('splitValue').innerText = `${this.value}%`;
+            renderCollageGrid();
+        });
+
+        document.getElementById('gapSlider').addEventListener('input', function() {
+            globalBorderGap = parseInt(this.value);
+            document.getElementById('gapValue').innerText = `${this.value}px`;
+            renderCollageGrid();
+        });
+
+        document.getElementById('zoomSlider').addEventListener('input', function() {
+            collageSlots[currentActiveSlot].zoom = this.value / 100;
+            document.getElementById('zoomValue').innerText = `${this.value}%`;
+            renderCollageGrid();
+        });
+
+        // Filter Brightness & Contrast
+        function applyActiveFilters() {
+            const slot = collageSlots[currentActiveSlot];
+            if (!slot.original) return;
+            slot.bright = document.getElementById('cBright').value;
+            slot.contrast = document.getElementById('cContrast').value;
+            document.getElementById('lblBright').innerText = `${slot.bright}%`;
+            document.getElementById('lblContrast').innerText = `${slot.contrast}%`;
+
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = slot.original.width;
+            offCanvas.height = slot.original.height;
+            const offCtx = offCanvas.getContext('2d');
+            offCtx.filter = `brightness(${slot.bright}%) contrast(${slot.contrast}%)`;
+            offCtx.drawImage(slot.original, 0, 0);
+
+            const filteredImg = new Image();
+            filteredImg.onload = () => {
+                slot.img = filteredImg;
+                renderCollageGrid();
+            };
+            filteredImg.src = offCanvas.toDataURL();
+        }
+
+        document.getElementById('cBright').addEventListener('input', applyActiveFilters);
+        document.getElementById('cContrast').addEventListener('input', applyActiveFilters);
+
+        // Penggeser Posisi D-Pad Foto
+        document.querySelectorAll('.dpad-btn[data-dir]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                let direction = this.getAttribute('data-dir');
+                if(direction === 'up') collageSlots[currentActiveSlot].y -= 15;
+                if(direction === 'down') collageSlots[currentActiveSlot].y += 15;
+                if(direction === 'left') collageSlots[currentActiveSlot].x -= 15;
+                if(direction === 'right') collageSlots[currentActiveSlot].x += 15;
+                renderCollageGrid();
+            });
+        });
+
+        document.getElementById('btnResetPos').addEventListener('click', () => {
+            collageSlots[currentActiveSlot].zoom = 1;
+            collageSlots[currentActiveSlot].x = 0;
+            collageSlots[currentActiveSlot].y = 0;
+            syncSlidersFromSlotData();
+            renderCollageGrid();
+        });
+
+        document.getElementById('btnClearSlot').addEventListener('click', () => {
+            collageSlots[currentActiveSlot].img = null;
+            collageSlots[currentActiveSlot].original = null;
+            renderCollageGrid();
+        });
+
+        document.getElementById('btnResetLayout').addEventListener('click', () => {
+            globalSplitRatio = 0.5; globalBorderGap = 10;
+            document.getElementById('splitSlider').value = 50;
+            document.getElementById('gapSlider').value = 10;
+            document.getElementById('splitValue').innerText = "50%";
+            document.getElementById('gapValue').innerText = "10px";
+            collageSlots.forEach(s => { s.zoom = 1; s.x = 0; s.y = 0; s.bright = 100; s.contrast = 100; });
+            syncSlidersFromSlotData();
+            renderCollageGrid();
+        });
+
+        // CORE ENGINE PEMBENTUK TATA LETAK GRID
+        function renderCollageGrid() {
+            const W = collageCanvas.width; const H = collageCanvas.height;
+            ctxCol.clearRect(0,0,W,H);
+            ctxCol.fillStyle = "#ffffff"; ctxCol.fillRect(0,0,W,H);
+
+            let areas = [];
+            let g = globalBorderGap;
+            let r = globalSplitRatio;
+
+            if (currentModel === 'v-2') {
+                let availW = W - g * 3;
+                let w1 = availW * r; let w2 = availW * (1 - r);
+                areas.push({ x: g, y: g, w: w1, h: H - g * 2 });
+                areas.push({ x: g * 2 + w1, y: g, w: w2, h: H - g * 2 });
+            } 
+            else if (currentModel === 'h-2') {
+                let availH = H - g * 3;
+                let h1 = availH * r; let h2 = availH * (1 - r);
+                areas.push({ x: g, y: g, w: W - g * 2, h: h1 });
+                areas.push({ x: g, y: g * 2 + h1, w: W - g * 2, h: h2 });
+            }
+            else if (currentModel === 'v-3') {
+                let wBox = (W - g * 4) / 3;
+                for(let i=0; i<3; i++) areas.push({ x: g + i * (wBox + g), y: g, w: wBox, h: H - g * 2 });
+            }
+            else if (currentModel === 'mix-3') {
+                let wLeft = (W - g * 3) * 0.55; let wRight = (W - g * 3) * 0.45;
+                let hRight = (H - g * 3) / 2;
+                areas.push({ x: g, y: g, w: wLeft, h: H - g * 2 });
+                areas.push({ x: g * 2 + wLeft, y: g, w: wRight, h: hRight });
+                areas.push({ x: g * 2 + wLeft, y: g * 2 + hRight, w: wRight, h: hRight });
+            }
+
+            areas.forEach((area, idx) => {
+                const slot = collageSlots[idx];
+                ctxCol.save();
+                ctxCol.beginPath();
+                ctxCol.roundRect(area.x, area.y, area.w, area.h, 6);
+                ctxCol.clip();
+
+                ctxCol.fillStyle = (idx === currentActiveSlot) ? "#f0f6fc" : "#f8fafc";
+                ctxCol.fillRect(area.x, area.y, area.w, area.h);
+
+                if (slot && slot.img) {
+                    ctxCol.save();
+                    ctxCol.translate(area.x + area.w / 2, area.y + area.h / 2);
+                    ctxCol.scale(slot.zoom, slot.zoom);
+                    ctxCol.translate(slot.x, slot.y);
+
+                    let imgRatio = slot.img.width / slot.img.height;
+                    let areaRatio = area.w / area.h;
+                    let dW, dH;
+                    if (imgRatio > areaRatio) { dH = area.h; dW = area.h * imgRatio; } 
+                    else { dW = area.w; dH = area.w / imgRatio; }
+
+                    ctxCol.drawImage(slot.img, -dW/2, -dH/2, dW, dH);
+                    ctxCol.restore();
+                } else {
+                    ctxCol.fillStyle = "#94a3b8";
+                    ctxCol.font = "bold 12px 'Inter'"; ctxCol.textAlign = "center";
+                    ctxCol.fillText(`Kotak ${idx + 1} (Kosong)`, area.x + area.w / 2, area.y + area.h / 2);
+                }
+
+                if (idx === currentActiveSlot) {
+                    ctxCol.strokeStyle = "#2c5f8a"; ctxCol.lineWidth = 3; ctxCol.stroke();
+                }
+                ctxCol.restore();
+            });
+        }
+
+        document.getElementById('btnDownloadCollage').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'hasil_studio_kolase.png';
+            link.href = collageCanvas.toDataURL('image/png');
+            link.click();
+        });
+
+
+        // --- SCREEN 2: ENGINE PEMOTONG LATAR BELAKANG SMART AI ONLINE AUTOMATIC ---
+        document.getElementById('btnUploadBg').addEventListener('click', () => {
+            document.getElementById('bgFileInput').click();
+        });
+
+        document.getElementById('bgFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Render Preview Gambar Asli di Sisi Kiri
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const srcImg = new Image();
+                srcImg.onload = () => {
+                    ctxBgSrc.clearRect(0,0,450,340);
+                    ctxBgSrc.drawImage(srcImg, 0, 0, 450, 340);
+                };
+                srcImg.src = event.target.result;
+                
+                // Mulai Proses Eksekusi Pemotongan AI
+                runSmartAiCutout(file);
+            };
+            reader.readAsDataURL(file);
+        });
+
+        async function runSmartAiCutout(fileSource) {
+            aiLoading.style.display = 'flex';
+            aiStatusText.innerHTML = `<i class="fas fa-robot"></i> AI sedang menganalisis gambar...<br><span style='font-size:10px; font-weight:400; color:#64748b;'>Proses pertama membutuhkan waktu sedikit lebih lama.</span>`;
+            btnSendToCollage.disabled = true;
+
+            try {
+                // Memanggil Engine AI IMG.LY untuk memisahkan latar belakang secara pintar
+                const blobImageResult = await imglyBackgroundRemoval.removeBackground(fileSource);
+                const urlResult = URL.createObjectURL(blobImageResult);
+                
+                processedAiImage = new Image();
+                processedAiImage.onload = () => {
+                    ctxBgRes.clearRect(0,0,450,340);
+                    ctxBgRes.drawImage(processedAiImage, 0, 0, 450, 340);
+                    
+                    aiLoading.style.display = 'none';
+                    btnSendToCollage.disabled = false;
+                    canvasConfetti({ particleCount: 30, spread: 25 });
+                };
+                processedAiImage.src = urlResult;
+
+            } catch (error) {
+                console.error(error);
+                alert("Gagal memproses gambar menggunakan AI. Pastikan perangkat Anda terhubung ke internet.");
+                aiLoading.style.display = 'none';
+            }
+        }
+
+        // KIRIM DATA FOTO KE SLOT GRID KOLASE YANG AKTIF
+        document.getElementById('btnSendToCollage').addEventListener('click', () => {
+            if(!processedAiImage) return;
+            const dataUrl = bgResultCanvas.toDataURL('image/png');
+            const targetImg = new Image();
+            targetImg.onload = () => {
+                collageSlots[currentActiveSlot].img = targetImg;
+                collageSlots[currentActiveSlot].original = targetImg;
+                switchScreen(1); // Otomatis kembali ke Halaman 1
+                renderCollageGrid();
+                canvasConfetti({ particleCount: 40, spread: 30 });
+            };
+            targetImg.src = dataUrl;
+        });
+
+        // Render Antarmuka Default Saat Pertama Dimuat
+        rebuildSlotTabs();
+        renderCollageGrid();
+    })();
+</script>
+</body>
+</html>
