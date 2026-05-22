@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Studio Kolase Pro - Multi Grid & Layout</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+            font-family: 'Inter', sans-serif;
+            padding: 16px 12px 40px;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+        .app-container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 800;
+            font-size: 1.8rem;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+        .header p { color: #64748b; font-size: 0.9rem; margin-top: 4px; }
+        
+        /* Layout Utama Grid Workspace */
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 900px) {
+            .workspace-grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+        }
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #1e293b;
+        }
+
+        /* Area Canvas Output Utama */
+        .canvas-container {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        #collageCanvas {
+            width: 100%;
+            max-width: 650px;
+            height: auto;
+            border-radius: 12px;
+            display: block;
+            background: #f8fafc;
+            margin: 0 auto;
+        }
+
+        /* Navigasi Pilihan Model Bingkai Layout */
+        .layout-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .layout-btn {
+            background: #f1f5f9;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #475569;
+        }
+        .layout-btn.active {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: white;
+        }
+
+        /* Slot Selektor Interaktif */
+        .slot-selector-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .slot-pill {
+            flex: 1;
+            padding: 10px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #64748b;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .slot-pill.active {
+            background: #e0f2fe;
+            border-color: #0284c7;
+            color: #0369a1;
+        }
+
+        /* Tombol & Aksi */
+        .btn {
+            padding: 12px 16px; border: none; border-radius: 14px; font-weight: 600;
+            font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center;
+            justify-content: center; gap: 8px; transition: all 0.15s;
+        }
+        .btn-primary { background: #0284c7; color: white; }
+        .btn-primary:hover { background: #0369a1; }
+        .btn-success { background: #059669; color: white; width: 100%; font-size: 1rem; margin-top: 10px; }
+        .btn-success:hover { background: #047857; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-secondary { background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }
+        
+        .btn-group-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+
+        /* Panel Kontrol Penggeser */
+        .control-panel { display: flex; flex-direction: column; gap: 14px; }
+        .control-block {
+            background: #f8fafc; padding: 14px; border-radius: 16px;
+            border: 1px solid #f1f5f9;
+        }
+        .control-title { font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .slider-row { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: #334155; margin-bottom: 8px; }
+        .slider-row:last-child { margin-bottom: 0; }
+        input[type="range"] { flex: 1; margin-left: 12px; height: 6px; accent-color: #0284c7; cursor: pointer; }
+
+        /* Pad Tombol Navigasi Posisi */
+        .dpad-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            max-width: 180px;
+            margin: 0 auto;
+        }
+        .btn-mini { padding: 8px; font-size: 0.8rem; border-radius: 10px; background: white; border: 1px solid #cbd5e1; color: #334155; cursor: pointer; }
+        .btn-mini:active { background: #e2e8f0; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <h1><i class="fa-solid fa-layer-group"></i> Studio Kolase Foto Modern</h1>
+        <p>Sempurnakan foto produk & kenangan dengan kolase grid fleksibel terupdate</p>
+    </div>
+
+    <div class="workspace-grid">
+        <div class="card">
+            <div class="card-title"><i class="fa-solid fa-eye"></i> Hasil Desain Live Preview</div>
+            
+            <div class="canvas-container">
+                <canvas id="collageCanvas" width="650" height="450"></canvas>
+            </div>
+
+            <div class="layout-selector">
+                <div class="layout-btn active" data-grid="v-2"><i class="fa-solid fa-grip-lines-vertical"></i><br>2 Kiri-Kanan</div>
+                <div class="layout-btn" data-grid="h-2"><i class="fa-solid fa-grip-lines"></i><br>2 Atas-Bawah</div>
+                <div class="layout-btn" data-grid="v-3"><i class="fa-solid fa-grip"></i><br>3 Kolom</div>
+                <div class="layout-btn" data-grid="mix-3"><i class="fa-solid fa-table-cells-large"></i><br>3 Campuran</div>
+            </div>
+
+            <div class="btn-group-2">
+                <button id="btnOpenFile" class="btn btn-primary"><i class="fa-solid fa-file-import"></i> Buka Gambar</button>
+                <button id="btnOpenCamera" class="btn btn-secondary"><i class="fa-solid fa-camera"></i> Kamera HP</button>
+            </div>
+            
+            <button id="btnDownload" class="btn btn-success"><i class="fa-solid fa-download"></i> Simpan / Unduh Hasil Kolase</button>
+        </div>
+
+        <div class="card control-panel">
+            <div class="card-title"><i class="fa-solid fa-sliders"></i> Panel Pengaturan & Penyelaras</div>
+
+            <div class="control-block">
+                <div class="control-title">Pilih Kotak Target Foto</div>
+                <div class="slot-selector-row" id="slotSelectorContainer">
+                    </div>
+                <button id="btnDeletePhoto" class="btn btn-danger" style="width:100%; padding:6px; font-size:0.78rem; border-radius:8px;"><i class="fa-solid fa-trash-can"></i> Hapus Foto di Kotak Ini</button>
+            </div>
+
+            <div class="control-block">
+                <div class="control-title">Ketebalan Garis Pembatas (Border)</div>
+                <div class="slider-row">
+                    <span id="lblGap">Ketebalan: 10px</span>
+                    <input type="range" id="sliderGap" min="0" max="40" value="10">
+                </div>
+                <div class="slider-row" style="margin-top: 8px;">
+                    <span id="lblSplit">Posisi Sekat: 50%</span>
+                    <input type="range" id="sliderSplit" min="25" max="75" value="50">
+                </div>
+            </div>
+
+            <div class="control-block">
+                <div class="control-title">Penyelarasan Posisi & Rotasi Foto</div>
+                <div class="slider-row" style="margin-bottom: 12px;">
+                    <span id="lblZoom">Zoom: 100%</span>
+                    <input type="range" id="sliderZoom" min="20" max="250" value="100">
+                </div>
+                <div class="slider-row" style="margin-bottom: 14px;">
+                    <span id="lblRotate">Putar: 0°</span>
+                    <input type="range" id="sliderRotate" min="-180" max="180" value="0">
+                </div>
+                <div class="dpad-container">
+                    <div></div><button class="btn-mini" id="moveUp"><i class="fa-solid fa-arrow-up"></i></button><div></div>
+                    <button class="btn-mini" id="moveLeft"><i class="fa-solid fa-arrow-left"></i></button>
+                    <button class="btn-mini" id="moveReset" title="Reset Posisi"><i class="fa-solid fa-arrows-to-dot"></i></button>
+                    <button class="btn-mini" id="moveRight"><i class="fa-solid fa-arrow-right"></i></button>
+                    <div></div><button class="btn-mini" id="moveDown"><i class="fa-solid fa-arrow-down"></i></button><div></div>
+                </div>
+            </div>
+
+            <div class="control-block">
+                <div class="control-title">Filter Pencahayaan (Vivid Enhancer)</div>
+                <div class="slider-row">
+                    <span id="lblBright">Kecerahan: 100%</span>
+                    <input type="range" id="sliderBright" min="50" max="150" value="100">
+                </div>
+                <div class="slider-row" style="margin-top: 8px;">
+                    <span id="lblContrast">Kontras: 100%</span>
+                    <input type="range" id="sliderContrast" min="50" max="150" value="100">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        const collageCanvas = document.getElementById('collageCanvas');
+        const ctx = collageCanvas.getContext('2d');
+
+        // State Global Aplikasi
+        let activeModel = 'v-2'; // v-2, h-2, v-3, mix-3
+        let activeSlotIndex = 0;
+        let globalGap = 10;
+        let globalSplitRatio = 0.5;
+
+        // Penampung Data Gambar untuk Maksimal 3 Kotak
+        let slotsData = [
+            { img: null, original: null, zoom: 1.0, x: 0, y: 0, rotate: 0, bright: 100, contrast: 100 },
+            { img: null, original: null, zoom: 1.0, x: 0, y: 0, rotate: 0, bright: 100, contrast: 100 },
+            { img: null, original: null, zoom: 1.0, x: 0, y: 0, rotate: 0, bright: 100, contrast: 100 }
+        ];
+
+        // Jalankan Gambar Ulang Pertama Kali (Blank Layout)
+        redrawCollageGrid();
+        buildSlotSelectorTabs();
+
+        // --- SISTEM LAYOUT SWITCHER ---
+        document.querySelectorAll('.layout-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                activeModel = this.getAttribute('data-grid');
+                
+                // Matikan slider pembagi jika memilih layout 3 kotak
+                document.getElementById('sliderSplit').disabled = !(activeModel === 'v-2' || activeModel === 'h-2');
+                
+                if (activeSlotIndex >= getMaxSlots()) activeSlotIndex = 0;
+                buildSlotSelectorTabs();
+                syncSlidersFromData();
+                redrawCollageGrid();
+            });
+        });
+
+        function getMaxSlots() {
+            return (activeModel === 'v-2' || activeModel === 'h-2') ? 2 : 3;
+        }
+
+        // Membentuk Tab Tombol Kotak 1, Kotak 2, Kotak 3 secara Dinamis
+        function buildSlotSelectorTabs() {
+            const container = document.getElementById('slotSelectorContainer');
+            container.innerHTML = "";
+            const count = getMaxSlots();
+
+            for (let i = 0; i < count; i++) {
+                const pill = document.createElement('div');
+                pill.className = `slot-pill ${i === activeSlotIndex ? 'active' : ''}`;
+                pill.innerText = `Kotak ${i + 1}`;
+                pill.onclick = () => {
+                    activeSlotIndex = i;
+                    buildSlotSelectorTabs();
+                    syncSlidersFromData();
+                    redrawCollageGrid();
+                };
+                container.appendChild(pill);
+            }
+        }
+
+        // Sinkronisasi Slider Kanan Mengikuti Data Foto yang Sedang Dipilih
+        function syncSlidersFromData() {
+            const cur = slotsData[activeSlotIndex];
+            document.getElementById('sliderZoom').value = cur.zoom * 100;
+            document.getElementById('lblZoom').innerText = `Zoom: ${Math.round(cur.zoom * 100)}%`;
+            
+            document.getElementById('sliderRotate').value = cur.rotate;
+            document.getElementById('lblRotate').innerText = `Putar: ${cur.rotate}°`;
+            
+            document.getElementById('sliderBright').value = cur.bright;
+            document.getElementById('lblBright').innerText = `Kecerahan: ${cur.bright}%`;
+            
+            document.getElementById('sliderContrast').value = cur.contrast;
+            document.getElementById('lblContrast').innerText = `Kontras: ${cur.contrast}%`;
+        }
+
+        // --- INPUT FILE & KAMERA HP ---
+        document.getElementById('btnOpenFile').addEventListener('click', () => {
+            const el = document.createElement('input'); el.type = 'file'; el.accept = 'image/*';
+            el.onchange = (e) => { processImageFile(e.target.files[0]); };
+            el.click();
+        });
+
+        document.getElementById('btnOpenCamera').addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                    .catch(() => navigator.mediaDevices.getUserMedia({ video: true }));
+                
+                const video = document.createElement('video'); video.srcObject = stream; video.autoplay = true; video.playsInline = true;
+                video.onloadedmetadata = () => {
+                    setTimeout(() => {
+                        const snap = document.createElement('canvas');
+                        snap.width = video.videoWidth; snap.height = video.videoHeight;
+                        snap.getContext('2d').drawImage(video, 0, 0);
+                        
+                        const img = new Image();
+                        img.onload = () => {
+                            slotsData[activeSlotIndex].original = img;
+                            slotsData[activeSlotIndex].img = img;
+                            redrawCollageGrid();
+                            stream.getTracks().forEach(t => t.stop());
+                        };
+                        img.src = snap.toDataURL('image/png');
+                    }, 700);
+                };
+            } catch(e) { alert("Kamera tidak diizinkan atau sedang dipakai aplikasi lain."); }
+        });
+
+        function processImageFile(file) {
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    slotsData[activeSlotIndex].original = img;
+                    slotsData[activeSlotIndex].img = img;
+                    redrawCollageGrid();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- MANIPULASI SLIDER CONTROLLER ---
+        document.getElementById('sliderGap').addEventListener('input', function() {
+            globalGap = parseInt(this.value);
+            document.getElementById('lblGap').innerText = `Ketebalan: ${globalGap}px`;
+            redrawCollageGrid();
+        });
+
+        document.getElementById('sliderSplit').addEventListener('input', function() {
+            globalSplitRatio = this.value / 100;
+            document.getElementById('lblSplit').innerText = `Posisi Sekat: ${this.value}%`;
+            redrawCollageGrid();
+        });
+
+        document.getElementById('sliderZoom').addEventListener('input', function() {
+            slotsData[activeSlotIndex].zoom = this.value / 100;
+            document.getElementById('lblZoom').innerText = `Zoom: ${this.value}%`;
+            redrawCollageGrid();
+        });
+
+        document.getElementById('sliderRotate').addEventListener('input', function() {
+            slotsData[activeSlotIndex].rotate = parseInt(this.value);
+            document.getElementById('lblRotate').innerText = `Putar: ${this.value}°`;
+            redrawCollageGrid();
+        });
+
+        // Event Handler Efek Brightness & Contrast Instan (Vivid Filter)
+        function applyLiveFilters() {
+            const cur = slotsData[activeSlotIndex];
+            if (!cur.original) return;
+
+            cur.bright = document.getElementById('sliderBright').value;
+            cur.contrast = document.getElementById('sliderContrast').value;
+            document.getElementById('lblBright').innerText = `Kecerahan: ${cur.bright}%`;
+            document.getElementById('lblContrast').innerText = `Kontras: ${cur.contrast}%`;
+
+            const fCanvas = document.createElement('canvas');
+            fCanvas.width = cur.original.width; fCanvas.height = cur.original.height;
+            const fCtx = fCanvas.getContext('2d');
+            fCtx.filter = `brightness(${cur.bright}%) contrast(${cur.contrast}%)`;
+            fCtx.drawImage(cur.original, 0, 0);
+
+            const nImg = new Image();
+            nImg.onload = () => { cur.img = nImg; redrawCollageGrid(); };
+            nImg.src = fCanvas.toDataURL();
+        }
+        document.getElementById('sliderBright').addEventListener('input', applyLiveFilters);
+        document.getElementById('sliderContrast').addEventListener('input', applyLiveFilters);
+
+        // --- DPAD KONTROL GERAK ---
+        document.getElementById('moveUp').addEventListener('click', () => { slotsData[activeSlotIndex].y -= 12; redrawCollageGrid(); });
+        document.getElementById('moveDown').addEventListener('click', () => { slotsData[activeSlotIndex].y += 12; redrawCollageGrid(); });
+        document.getElementById('moveLeft').addEventListener('click', () => { slotsData[activeSlotIndex].x -= 12; redrawCollageGrid(); });
+        document.getElementById('moveRight').addEventListener('click', () => { slotsData[activeSlotIndex].x += 12; redrawCollageGrid(); });
+        document.getElementById('moveReset').addEventListener('click', () => {
+            slotsData[activeSlotIndex].x = 0; slotsData[activeSlotIndex].y = 0;
+            slotsData[activeSlotIndex].zoom = 1.0; slotsData[activeSlotIndex].rotate = 0;
+            syncSlidersFromData(); redrawCollageGrid();
+        });
+
+        document.getElementById('btnDeletePhoto').addEventListener('click', () => {
+            slotsData[activeSlotIndex].img = null; slotsData[activeSlotIndex].original = null;
+            redrawCollageGrid();
+        });
+
+        // --- ENGINE UTAMA MENGGAMBAR GRID KOLASE ---
+        function redrawCollageGrid() {
+            const W = collageCanvas.width; const H = collageCanvas.height;
+            ctx.clearRect(0,0,W,H);
+            
+            // Set Background Putih Bersih Studio
+            ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,W,H);
+
+            let areas = [];
+            let g = globalGap;
+            let r = globalSplitRatio;
+
+            // Kalkulasi Posisi Koordinat Kotak Berdasarkan Model Grid
+            if (activeModel === 'v-2') {
+                let innerW = W - g * 3;
+                let w1 = innerW * r; let w2 = innerW * (1 - r);
+                areas.push({ x: g, y: g, w: w1, h: H - g * 2 });
+                areas.push({ x: g * 2 + w1, y: g, w: w2, h: H - g * 2 });
+            } 
+            else if (activeModel === 'h-2') {
+                let innerH = H - g * 3;
+                let h1 = innerH * r; let h2 = innerH * (1 - r);
+                areas.push({ x: g, y: g, w: W - g * 2, h: h1 });
+                areas.push({ x: g, y: g * 2 + h1, w: W - g * 2, h: h2 });
+            }
+            else if (activeModel === 'v-3') {
+                let boxW = (W - g * 4) / 3;
+                for(let i=0; i<3; i++) areas.push({ x: g + i * (boxW + g), y: g, w: boxW, h: H - g * 2 });
+            }
+            else if (activeModel === 'mix-3') {
+                let wL = (W - g * 3) * 0.55; let wR = (W - g * 3) * 0.45;
+                let hSub = (H - g * 3) / 2;
+                areas.push({ x: g, y: g, w: wL, h: H - g * 2 });
+                areas.push({ x: g * 2 + wL, y: g, w: wR, h: hSub });
+                areas.push({ x: g * 2 + wL, y: g * 2 + hSub, w: wR, h: hSub });
+            }
+
+            // Mulai Proses Tempel Gambar Ke Masing-Masing Kotak
+            areas.forEach((area, index) => {
+                const slot = slotsData[index];
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(area.x, area.y, area.w, area.h, 12); // Sudut tumpul elegan
+                ctx.clip();
+
+                // Background Kotak (Warna berbeda jika sedang dipilih/di-edit)
+                ctx.fillStyle = (index === activeSlotIndex) ? "#f0f9ff" : "#f8fafc";
+                ctx.fillRect(area.x, area.y, area.w, area.h);
+
+                if (slot && slot.img) {
+                    ctx.save();
+                    // Translasi ke Titik Tengah Kotak Target
+                    ctx.translate(area.x + area.w / 2, area.y + area.h / 2);
+                    ctx.scale(slot.zoom, slot.zoom);
+                    ctx.rotate((slot.rotate * Math.PI) / 180);
+                    ctx.translate(slot.x, slot.y);
+
+                    let imgRatio = slot.img.width / slot.img.height;
+                    let areaRatio = area.w / area.h;
+                    let dW, dH;
+                    
+                    if (imgRatio > areaRatio) { dH = area.h; dW = area.h * imgRatio; } 
+                    else { dW = area.w; dH = area.w / imgRatio; }
+
+                    ctx.drawImage(slot.img, -dW/2, -dH/2, dW, dH);
+                    ctx.restore();
+                } else {
+                    // Teks Indikator Kotak Kosong
+                    ctx.fillStyle = "#94a3b8";
+                    ctx.font = "bold 13px 'Inter'"; ctx.textAlign = "center";
+                    ctx.fillText(`Kotak ${index + 1} (Kosong)`, area.x + area.w / 2, area.y + area.h / 2);
+                }
+
+                // Beri garis tepi biru jika kotak tersebut sedang aktif diedit
+                if (index === activeSlotIndex) {
+                    ctx.strokeStyle = "#0284c7"; ctx.lineWidth = 3.5; ctx.stroke();
+                }
+                ctx.restore();
+            });
+        }
+
+        // --- ACTION DOWNLOAD FILE PNG ---
+        document.getElementById('btnDownload').addEventListener('click', () => {
+            let adaGambar = slotsData.some(s => s.img !== null);
+            if (!adaGambar) { alert("Harap isi gambar terlebih dahulu sebelum menyimpan!"); return; }
+            
+            const link = document.createElement('a');
+            link.download = 'hasil_studio_kolase.png';
+            link.href = collageCanvas.toDataURL('image/png');
+            link.click();
+            canvasConfetti({ particleCount: 50, spread: 35 });
+        });
+    })();
+</script>
+</body>
+</html>
